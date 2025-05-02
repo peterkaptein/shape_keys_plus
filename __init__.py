@@ -201,7 +201,6 @@ classes = (
 def register():
     
     for cls in classes:
-        print("register xlass")
         bpy.utils.register_class(cls)
 
 
@@ -209,15 +208,12 @@ def register():
                        PointerProperty,
                        )
     
-    print("__name__",__name__)
     core.preferences = bpy.context.preferences.addons[__name__].preferences
     bpy.types.Scene.shape_keys_plus = PointerProperty(
         type=properties.SceneProperties, name=core.strings['Shape Keys+'])
     bpy.types.Key.shape_keys_plus = PointerProperty(
         type=properties.KeyProperties, name=core.strings['Shape Keys+'])
     
-    
-    print("preferences")
     default_panel_exists = hasattr(bpy.types, 'DATA_PT_shape_keys')
     
     if core.preferences.hide_default and default_panel_exists:
@@ -227,13 +223,12 @@ def register():
             pass
     
     # Blender 2.79b, SKP v1.0.x
-    #if hasattr(bpy.types, 'OBJECT_PT_skp_shape_keys_plus'):
-    #bpy.utils.unregister_class(bpy.types.OBJECT_PT_skp_shape_keys_plus)
+    if hasattr(bpy.types, 'OBJECT_PT_skp_shape_keys_plus'):
+        bpy.utils.unregister_class(bpy.types.OBJECT_PT_skp_shape_keys_plus)
     
     # Blender 2.79b, SKP v1.1.x
-    #if hasattr(bpy.types, 'OBJECT_PT_shape_keys_plus'):
-    #bpy.utils.unregister_class(bpy.types.OBJECT_PT_shape_keys_plus)
-    print("done registering class")
+    if hasattr(bpy.types, 'OBJECT_PT_shape_keys_plus'):
+        bpy.utils.unregister_class(bpy.types.OBJECT_PT_shape_keys_plus)
 
 def unregister():
     for cls in classes[::-1]:

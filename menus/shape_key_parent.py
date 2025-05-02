@@ -92,7 +92,7 @@ class OBJECT_MT_skp_shape_key_parent(bpy.types.Menu):
 class OBJECT_MT_skp_shape_key_parent_selected(bpy.types.Menu):
     bl_label = core.strings['menus.ShapeKeyParent.bl_label']
 
-    # This is probably to parent multi-selection
+    # This is for multi-selection
     
     def draw(self, context):
         tree:PkTree=memory.tree
@@ -100,9 +100,7 @@ class OBJECT_MT_skp_shape_key_parent_selected(bpy.types.Menu):
         active_key = context.object.active_shape_key
         
         if active_key:
-            folders=tree.getFlatlist(folderOnly=True)
 
-            print("FOlders to display",len(folders))
             
             op = layout.operator(
                 operator='object.skp_shape_key_parent',
@@ -130,6 +128,11 @@ class OBJECT_MT_skp_shape_key_parent_selected(bpy.types.Menu):
             
             op.type = 'CLEAR_SELECTED'
                
+            ###################
+
+            folders=tree.getFlatlist(folderOnly=True)
+            print("FOlders to display",len(folders))
+
             if len(folders)>0:
                 layout.separator()
 
@@ -137,7 +140,7 @@ class OBJECT_MT_skp_shape_key_parent_selected(bpy.types.Menu):
             forbiddenFolders =[] 
             for folder in folders:
                 if tree.keyIsSelected(folder.name):
-                    forbiddenFolder+=[folder.name]+folder.getChildrenNames(recursive=True,folderOnly=True) 
+                    forbiddenFolders+=[folder.name]+folder.getChildrenNames(recursive=True,folderOnly=True) 
             
             # Render list
             for folder in folders:

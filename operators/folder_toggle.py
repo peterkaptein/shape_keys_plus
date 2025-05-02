@@ -29,9 +29,12 @@ class OBJECT_OT_skp_folder_toggle(bpy.types.Operator):
         activeNode= tree.getNodeByName(active_key.name)
         parentNames=activeNode.getAncestryNames()
         
-        if active_key and key.name in parentNames:
+        # if active_key and key.name in parentNames:
             # The active index shouldn't be on a hidden shape key.
-            obj.active_shape_key_index = self.index
+        
+        # This we handled so this folder is now selected
+        # Prevents needless jumping to selection unitl then
+        obj.active_shape_key_index = self.index
         
         core.folder.toggle(key)
         memory.tree.update()

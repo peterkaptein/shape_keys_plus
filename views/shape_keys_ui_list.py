@@ -5,6 +5,9 @@ import bl_ui
 from .. import memory,core
 from ..memory import  PkTree, TreeNode
 
+def update(self, context):
+    memory.tree.update()
+
 class PK_MESH_UL_shape_keys_plus(bpy.types.UIList):
 
     # New approach:

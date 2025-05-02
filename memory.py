@@ -403,8 +403,7 @@ class StoredTreeParser:
         selectedObject=bpy.context.active_object
         print ("Store tree on ",selectedObject.name)
         selectedObject[TREE_STORE_NAME]=rootNode.getAsLegacyArray()
-        hasStoredTree=hasattr(selectedObject,TREE_STORE_NAME)
-        print ("Tree stored",hasStoredTree)
+        print ("Tree stored")
 
 
     def getStoredTree(self)->TreeNode:
@@ -569,6 +568,40 @@ class PkTree:
 
         self.selectedShapeKeys = []+[key.name for key in core.key.get_selected()]
 
+
+    def updateAndSanitizeFlatTree(self):
+        self.updateFlatLists()
+        """Do sanity check and fix issues if found. Also saves sanitized tree to object."""
+        key_blocks=key_blocks = bpy.context.active_object.data.shape_keys.key_blocks
+
+        shapeKeyNames=[key.name for key in key_blocks]
+        nodeNames=[key.name for key in self.flatList]
+
+        # Keys have been renamed or removed and not properly processed
+        wrongNodes=[node for node in self.flatList if node.name not in shapeKeyNames]
+        missingShapeKeys=[key for key in key_blocks if key.name not in nodeNames]
+
+
+        # Remove wrong keys in our viewmodel
+        if wrongNodes:
+            print("Removing {len(wrongNodes)} non-existing nodes from tree")
+            for node in wrongNodes:
+                node.remove()
+
+        # Add missing shapekeys to root of tree
+        if missingShapeKeys:
+            print("Adding {len(missingShapeKeys)} missing shape keys to Root")
+            for key in missingShapeKeys:
+                tree.rootNode.addShapeKeyAsChild(key)
+
+        # Update list only when something went wrong
+        # Also stor in object, so it contains sanitized version
+        if wrongNodes or missingShapeKeys:
+            self.updateFlatLists()
+            self.parser.storeTree(self.rootNode)
+
+        return not (wrongNodes or missingShapeKeys)
+
     def getFlatlist(self,folderOnly=False):
         if folderOnly:
             return [item for item in self.flatList if item.hasChildren()]
@@ -590,6 +623,13 @@ class PkTree:
 
     def getNodeByName(self,nodeName)->TreeNode|None:
         
+        if nodeName not in self.dictionary:
+            # Something changed the name of a property
+            # Now the key cannot be found
+            # 1: We need to update the flatlist. This will probablu fix it,
+            #    As the shapekey with changed name is still connected
+            # 2: We do a sanity check, just in case something else happened
+            self.updateAndSanitizeFlatTree()
         
         result = self.dictionary[nodeName]
 
@@ -610,8 +650,9 @@ class PkTree:
         2: Stores the nested tree structure (string references) in the selected mesh that contains the shapekeys\n"""
 
         # Apply the changes to the tree
-        self.updateFlatLists()
-        self.parser.storeTree(self.rootNode)
+        self.updateAndSanitizeFlatTree() # Removes all non-existing keys, adds missing from Shape Key list
+        self.parser.storeTree(self.rootNode) # Stores the tree to the selected object
+        print("Tree has been updated")
 
 
 tree:PkTree=PkTree()
