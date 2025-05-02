@@ -21,7 +21,7 @@ class OBJECT_OT_skp_folder_ungroup(bpy.types.Operator):
         shape_keys = obj.data.shape_keys
         key_blocks = shape_keys.key_blocks
         folder = key_blocks[self.index]
-        parents = memory.tree.active.get_parents(folder.name)
+        parents = memory.tree.get_parents(folder.name)
         active_name = obj.active_shape_key.name
         active_index = obj.active_shape_key_index
         

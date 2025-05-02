@@ -2,6 +2,7 @@ import bpy
 
 from .. import core
 from .. import memory
+from  bpy.types import AnyType, GeometryNodeMeshCube
 
 
 class DATA_PT_shape_keys_plus(bpy.types.Panel):
@@ -14,6 +15,9 @@ class DATA_PT_shape_keys_plus(bpy.types.Panel):
     def poll(cls, context):
         obj = context.object
         valid_types = {'MESH', 'LATTICE', 'CURVE', 'SURFACE'}
+
+        # Check if tree is based on current object, update flatlists
+        memory.tree.checkStatus()
         
         return obj and obj.type in valid_types
     
@@ -139,17 +143,31 @@ class DATA_PT_shape_keys_plus(bpy.types.Panel):
         
         row = layout.row()
         
-        row.template_list(
-            listtype_name='MESH_UL_shape_keys_plus',
-            dataptr=shape_keys,
-            propname='key_blocks',
-            active_dataptr=obj,
-            active_propname='active_shape_key_index',
-            list_id='SHAPE_KEYS_PLUS',
-            rows=8 if active_key else 4)
+        ######################
+        ######## LIST ########
+        ######################
+        # def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+        # TODO: make shape_keys contain sorted keys from our tree
+
+        if memory.tree:
+
+            
+            activeObj=bpy.context.active_object
+            shape_keys=activeObj.data.shape_keys #.key_blocks
+
+            op=row.template_list(
+                listtype_name='PK_MESH_UL_shape_keys_plus',
+                dataptr=shape_keys, # The object with the data
+                propname='key_blocks',
+                active_dataptr=activeObj,
+                active_propname='active_shape_key_index',
+                list_id='SHAPE_KEYS_PLUS',
+                rows=8 if active_key else 4)
+            #op.use_filter_show=True
         
         col = row.column(align=True)
         
+    
         #####################
         ######## ADD ########
         #####################
@@ -230,11 +248,11 @@ class DATA_PT_shape_keys_plus(bpy.types.Panel):
         
         col.separator()
         
-        loc = memory.tree.active.get_location(active_key.name)
+        # loc = memory.tree.get_location(active_key.name)
         
         sub = col.column(align=True)
         row = sub.row(align=True)
-        row.enabled = bool(selections) or loc[1] > bool(memory.tree.active.get_parents(active_key.name))
+        # row.enabled = bool(selections) or loc[1] > bool(memory.tree.get_parents(active_key.name))
         op = row.operator(
             operator='object.skp_shape_key_move',
             icon='TRIA_UP_BAR',
@@ -260,7 +278,7 @@ class DATA_PT_shape_keys_plus(bpy.types.Panel):
         op.selected = bool(selections)
         
         row = sub.row(align=True)
-        row.enabled = bool(selections) or loc[1] < len(loc[0]) - 1
+        row.enabled = bool(selections) #or loc[1] < len(loc[0]) - 1
         op = row.operator(
             operator='object.skp_shape_key_move',
             icon='TRIA_DOWN_BAR',

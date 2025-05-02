@@ -2,7 +2,7 @@ import bpy
 
 from .. import core
 from .. import memory
-
+from ..memory import *
 
 class OBJECT_OT_skp_shape_key_parent(bpy.types.Operator):
     bl_idname = 'object.skp_shape_key_parent'
@@ -38,137 +38,146 @@ class OBJECT_OT_skp_shape_key_parent(bpy.types.Operator):
         key_blocks = shape_keys.key_blocks
         active_key_name = obj.active_shape_key.name
         hidden = core.utils.hide(obj)
-        selections = core.key.deselect()
+        selectedKeyNames = core.key.deselect()
+
+        tree = memory.tree
+
+        parentNode=tree.getNodeByName(self.parent) if self.parent else None
+        childNode=tree.getNodeByName(self.child) if self.child else None
         
         if self.type == 'PARENT':
             placement = core.settings.shape_key_parent_placement
             
-            tree = memory.tree()
-            tree.transfer(self.child, self.parent)
-            tree.move(self.child, placement)
-            tree.apply()
+            parentNode.addChild(childNode)
+            tree.update()
             
             # Highlight Original Key
             obj.active_shape_key_index = key_blocks.find(active_key_name)
             
-            core.key.reselect(selections)
+            core.key.reselect(selectedKeyNames)
         elif self.type == 'UNPARENT':
+            # Move to the root of the tree
             placement = core.settings.shape_key_unparent_placement
             
-            tree = memory.tree()
-            ancestry = tree.ancestry(self.child)
+            if parentNode.hasParents():
+                tree.rootNode.addChild(childNode)
+                tree.update()
+                
+                # TODO: placement
+                # if placement in ('TOP', 'BOTTOM'):
+                #     tree.move(self.child, placement)
+                # elif placement == 'BELOW':
+                #     tree.move(self.child, 'DOWN')
             
-            if len(ancestry) > 1:
-                tree.reinsert(self.child, ancestry[-1][0])
-                
-                if placement in ('TOP', 'BOTTOM'):
-                    tree.move(self.child, placement)
-                elif placement == 'BELOW':
-                    tree.move(self.child, 'DOWN')
-                
-                tree.apply()
             
             # Highlight Original Key
             obj.active_shape_key_index = key_blocks.find(active_key_name)
-            
-            core.key.reselect(selections)
+            core.key.reselect(selectedKeyNames)
+
         elif self.type == 'CLEAR':
+            # Omitted now, see if statement above
+            # This seems to do the same as UNPARENT
             placement = core.settings.shape_key_unparent_placement
+
+            if parentNode.hasParents():
+                parentNode.parent.addChild(childNode)
+                tree.update()
             
-            tree = memory.tree()
-            ancestry = tree.ancestry(self.child)
             
-            if len(ancestry) > 1:
-                tree.reinsert(self.child, ancestry[1][0])
+            # if len(ancestry) > 1:
+            #     tree.reinsert(self.child, ancestry[1][0])
                 
-                if placement in ('TOP', 'BOTTOM'):
-                    tree.move(self.child, placement)
-                elif placement == 'BELOW':
-                    tree.move(self.child, 'DOWN')
+            #     if placement in ('TOP', 'BOTTOM'):
+            #         tree.move(self.child, placement)
+            #     elif placement == 'BELOW':
+            #         tree.move(self.child, 'DOWN')
                 
-                tree.apply()
+
             
             # Highlight Original Key
             obj.active_shape_key_index = key_blocks.find(active_key_name)
             
-            core.key.reselect(selections)
+            core.key.reselect(selectedKeyNames)
         elif self.type == 'NEW':
             # Here, the new key is being added as the parent to the active key.
             # The new key's own parenting works even when Auto Parent is turned off.
             active_key_name = obj.active_shape_key.name
             
-            parent = core.key.add(type='FOLDER')
-            
-            tree = memory.tree()
-            tree.reinsert(parent.name, active_key_name)
-            tree.transfer(active_key_name, parent.name)
-            tree.apply()
+            # Create new folder
+            parentShapeKey = core.key.add(type='FOLDER')
+
+            # Addn ew folder to parent, add selected node as child
+            newNode=parentNode.addShapeKeyAsChild(parentShapeKey)
+            newNode.addChild(childNode)
+
+            tree.update()
             
             # Highlight Original Key
             obj.active_shape_key_index = key_blocks.find(active_key_name)
             
-            core.key.reselect(selections)
+            core.key.reselect(selectedKeyNames)
             
         elif self.type == 'PARENT_SELECTED':
             placement = core.settings.shape_key_parent_placement
+   
+            # List of children to move
+            for name in selectedKeyNames[::{'TOP': -1, 'BOTTOM': 1}[placement]]:
+                nodeToMove=tree.getNodeByName(name)
+                parentNode.addChild(nodeToMove)
             
-            tree = memory.tree()
-            
-            for name in selections[::{'TOP': -1, 'BOTTOM': 1}[placement]]:
-                tree.transfer(name, self.parent)
-                tree.move(name, placement)
-            
-            tree.apply()
+            tree.update()
             
             # Highlight Original Key
             obj.active_shape_key_index = key_blocks.find(active_key_name)
             
-            core.key.reselect(selections)
+            core.key.reselect(selectedKeyNames)
         elif self.type == 'UNPARENT_SELECTED':
             placement = core.settings.shape_key_unparent_placement
             
-            tree = memory.tree()
-            outward = sorted(core.utils.flatten(selections), key=lambda name: -len(tree.ancestry(name)))
+            outward = sorted(core.utils.flatten(selectedKeyNames), key=lambda name: -len(tree.ancestry(name)))
             
             for name in outward[::{'TOP': -1, 'BELOW': -1, 'BOTTOM': 1, 'ABOVE': 1}[placement]]:
-                ancestry = tree.ancestry(name)
+                selectedNode=tree.getNodeByName(name)
+                tree.rootNode.addChild(selectedNode)
                 
-                if len(ancestry) > 1:
-                    tree.reinsert(name, ancestry[-1][0])
+                # if len(ancestry) > 1:
+                #     tree.reinsert(name, ancestry[-1][0])
                     
-                    if placement in ('TOP', 'BOTTOM'):
-                        tree.move(name, placement)
-                    elif placement == 'BELOW' and len(ancestry) > 1:
-                        tree.move(name, 'DOWN')
+                #     if placement in ('TOP', 'BOTTOM'):
+                #         tree.move(name, placement)
+                #     elif placement == 'BELOW' and len(ancestry) > 1:
+                #         tree.move(name, 'DOWN')
             
-            tree.apply()
+            tree.update()
             
             # Highlight Original Key
             obj.active_shape_key_index = key_blocks.find(active_key_name)
             
-            core.key.reselect(selections)
+            core.key.reselect(selectedKeyNames)
         elif self.type == 'CLEAR_SELECTED':
             placement = core.settings.shape_key_unparent_placement
             
-            tree = memory.tree()
+            if parentNode.hasParents():
+                parentParentNode:TreeNode=parentNode.parent
             
-            for name in selections[::{'TOP': -1, 'BELOW': -1, 'BOTTOM': 1, 'ABOVE': 1}[placement]]:
-                ancestry = tree.ancestry(name)
+                for name in selectedKeyNames[::{'TOP': -1, 'BELOW': -1, 'BOTTOM': 1, 'ABOVE': 1}[placement]]:
+                    selectedNode=tree.getNodeByName(name)
+                    parentParentNode.addChild(selectedNode)
                 
-                if len(ancestry) > 1:
-                    tree.reinsert(name, ancestry[1][0])
+                # if len(ancestry) > 1:
+                #     tree.reinsert(name, ancestry[1][0])
                 
-                if placement in ('TOP', 'BOTTOM'):
-                    tree.move(name, placement)
-                elif placement == 'BELOW' and len(ancestry) > 1:
-                    tree.move(name, 'DOWN')
+                # if placement in ('TOP', 'BOTTOM'):
+                #     tree.move(name, placement)
+                # elif placement == 'BELOW' and len(ancestry) > 1:
+                #     tree.move(name, 'DOWN')
             
-            tree.apply()
+            tree.update()
             
             # Highlight Original Key
             obj.active_shape_key_index = key_blocks.find(active_key_name)
             
-            core.key.reselect(selections)
+            core.key.reselect(selectedKeyNames)
         elif self.type == 'NEW_SELECTED':
             tree = memory.tree()
             
@@ -176,25 +185,24 @@ class OBJECT_OT_skp_shape_key_parent(bpy.types.Operator):
             # The new key's own parenting works even when Auto Parent is turned off.
             active_key_name = obj.active_shape_key.name
             
-            # The oldest selected parent of the active key. If this exists, the new
-            # folder will have to be created above it, instead of above the active key.
-            selected_parents_descending = [p[0] for p in tree.ancestry(active_key_name)[::-1] if p[0] in selections]
+            parentShapeKey = core.key.add(type='FOLDER')
             
-            parent = core.key.add(type='FOLDER')
-            
-            tree = memory.tree()
-            tree.reinsert(parent.name, core.utils.get(selected_parents_descending, 0, active_key_name))
-            
-            for name in selections:
-                tree.transfer(name, parent.name)
+            # Create new folder and add to parent
+            newFolder=parentNode.addShapeKeyAsChild(parentShapeKey)
+            parentNode.addChild(newFolder)
+ 
+            # Add selected to new folder
+            for name in selectedKeyNames:
+                selectedNode=tree.getNodeByName(name)
+                newFolder.addChild(selectedNode)
             
             tree.apply()
             
             # Highlight Parent Folder
-            obj.active_shape_key_index = key_blocks.find(parent.name)
+            obj.active_shape_key_index = key_blocks.find(parentShapeKey.name)
             
             # Select (Only) Parent Folder
-            core.key.select(parent, True)
+            core.key.select(parentShapeKey, True)
         
         core.utils.show(hidden)
         

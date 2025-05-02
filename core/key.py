@@ -15,7 +15,7 @@ def is_selected(key):
 
 
 def get_selected_indices():
-    obj = bpy.context.object
+    obj = bpy.context.active_object
     
     if not obj or not obj.data.shape_keys:
         return []
@@ -28,7 +28,7 @@ def get_selected_indices():
 def get_selected():
     """Returns a list of selected bpy.types.ShapeKey."""
     # Requires no existence check, because the same one already exists in get_selected_indices().
-    return [bpy.context.object.data.shape_keys.key_blocks[index] for index in get_selected_indices()]
+    return [bpy.context.active_object.data.shape_keys.key_blocks[index] for index in get_selected_indices()]
 
 
 def get_driver(key, fcurve=False):
@@ -44,8 +44,8 @@ def get_driver(key, fcurve=False):
 
 
 def add(type='DEFAULT'):
-    obj = bpy.context.object
-    
+    obj = bpy.context.active_object
+    # bpy.context.active_object.data.shape_keys.key_blocks
     # Add the key.
     if type == 'FROM_MIX':
         new_key = obj.shape_key_add(from_mix=True)
@@ -86,7 +86,7 @@ def add(type='DEFAULT'):
 
 
 def select(i, v):
-    obj = bpy.context.object
+    obj = bpy.context.active_object
     shape_keys = obj.data.shape_keys
     key_blocks = shape_keys.key_blocks
     selections = shape_keys.shape_keys_plus.selections
@@ -114,10 +114,10 @@ def select(i, v):
             selections.remove(selections.find(i))
 
 
-def deselect():
+def deselect()->list[str]:
     """Deselects all shape keys and returns a list of names to be passed as the argument to reselect()."""
     selections = [key.name for key in get_selected()]
-    bpy.context.object.data.shape_keys.shape_keys_plus.selections.clear()
+    bpy.context.active_object.data.shape_keys.shape_keys_plus.selections.clear()
     return selections
 
 
@@ -125,12 +125,12 @@ def reselect(selections):
     """Selects the shape keys from the list of names in `selections`, such as those returned by deselect()."""
     for name in selections:
         # Check if the shape key hasn't been deleted since the `selections` list was created.
-        if name in bpy.context.object.data.shape_keys.key_blocks:
+        if name in bpy.context.active_object.data.shape_keys.key_blocks:
             select(name, True)
 
 
 def copy(original_key, mirror=0, custom=False):
-    obj = bpy.context.object
+    obj = bpy.context.active_object
     shape_keys = obj.data.shape_keys
     key_blocks = shape_keys.key_blocks
     anim = shape_keys.animation_data

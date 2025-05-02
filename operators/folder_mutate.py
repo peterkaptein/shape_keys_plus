@@ -5,7 +5,7 @@ from .. import memory
 
 
 def update(self, context):
-    memory.changed()
+    memory.tree.checkStatus()
 
 
 class OBJECT_OT_skp_folder_mutate(bpy.types.Operator):

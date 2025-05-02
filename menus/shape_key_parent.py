@@ -2,13 +2,16 @@ import bpy
 
 from .. import core
 from .. import memory
+from ..memory import PkTree
 
 
 class OBJECT_MT_skp_shape_key_parent(bpy.types.Menu):
     bl_label = core.strings['menus.ShapeKeyParent.bl_label']
     
+    
     def draw(self, context):
         layout = self.layout
+        tree=memory.tree
         
         if core.key.get_selected_indices():
             layout.enabled = False
@@ -16,35 +19,42 @@ class OBJECT_MT_skp_shape_key_parent(bpy.types.Menu):
         active_key = context.object.active_shape_key
         
         if active_key:
-            key_blocks = active_key.id_data.key_blocks
-            parents = memory.tree.active.get_parents(active_key.name)
-            parent = core.utils.get(parents, 0, "")
-            grandparent = core.utils.get(parents, 1, "")
-            
-            op = layout.operator(
-                operator='object.skp_shape_key_parent',
-                text=core.strings['menus.ShapeKeyParent.draw.operator[New Folder]'],
-                translate=False,
-                icon='NEWFOLDER')
-            
-            op.type = 'NEW'
-            op.child = active_key.name
-            op.parent = parent
-            
-            if parent:
+
+            treeNode=tree.getNodeByName(active_key.name)
+            parents = treeNode.getAncestryNames()
+            folders=tree.getFlatlist(folderOnly=True)
+            forbiddenFolders = [active_key.name]+treeNode.getChildrenNames(folderOnly=True,recursive=True)
+            if treeNode.hasParents():
+                parentName=treeNode.parent.name
+                forbiddenFolders+=[parentName]
+
+                # New folder
+                op = layout.operator(
+                    operator='object.skp_shape_key_parent',
+                    text=core.strings['menus.ShapeKeyParent.draw.operator[New Folder]'],
+                    translate=False,
+                    icon='NEWFOLDER')
+                
+                op.type = 'NEW'
+                op.child = active_key.name
+                op.parent = parentName
+
+    
+                # Remove from parent
                 layout.separator()
                 
                 op = layout.operator(
                     operator='object.skp_shape_key_parent',
-                    text=core.strings['menus.ShapeKeyParent.draw.operator[Unparent from "%s"]'] % parent,
+                    text=core.strings['menus.ShapeKeyParent.draw.operator[Unparent from "%s"]'] % parentName,
                     translate=False,
                     icon='X')
                 
                 op.type = 'UNPARENT'
                 op.child = active_key.name
-                op.parent = parent
+                op.parent = parentName
             
-            if grandparent:
+            if treeNode.hasGrandParents():
+                parentName=treeNode.parent.name
                 op = layout.operator(
                     operator='object.skp_shape_key_parent',
                     text=core.strings['menus.ShapeKeyParent.draw.operator[Unparent from "%s"]'] % parents[-1],
@@ -53,29 +63,26 @@ class OBJECT_MT_skp_shape_key_parent(bpy.types.Menu):
                 
                 op.type = 'CLEAR'
                 op.child = active_key.name
-                op.parent = parent
+                op.parent = parentName
             
             # Only allow parenting to a folder that this shape key isn't already related to.
-            children = core.folder.get_children(active_key)
-            folders = [
-                k for k in key_blocks if
-                core.key.is_folder(k)
-            ]
+
+            print("FOlders to display",len(folders))
             
-            if folders:
+            if len(folders)>0:
                 layout.separator()
             
             for folder in folders:
                 row = layout.row()
                 
-                if folder == active_key or folder.name == parent or folder in children:
+                if folder.name in forbiddenFolders:
                     row.enabled = False
                 
                 op = row.operator(
                     operator='object.skp_shape_key_parent',
-                    text=("  " * len(memory.tree.active.get_parents(folder.name))) + folder.name,
+                    text=("  " * folder.indent) + folder.name,
                     translate=False,
-                    icon=core.folder.get_active_icon(folder))
+                    icon=core.folder.get_active_icon(folder.shapeKey))
                 
                 op.type = 'PARENT'
                 op.child = active_key.name
@@ -84,13 +91,18 @@ class OBJECT_MT_skp_shape_key_parent(bpy.types.Menu):
 
 class OBJECT_MT_skp_shape_key_parent_selected(bpy.types.Menu):
     bl_label = core.strings['menus.ShapeKeyParent.bl_label']
+
+    # This is probably to parent multi-selection
     
     def draw(self, context):
+        tree:PkTree=memory.tree
         layout = self.layout
         active_key = context.object.active_shape_key
         
         if active_key:
-            key_blocks = active_key.id_data.key_blocks
+            folders=tree.getFlatlist(folderOnly=True)
+
+            print("FOlders to display",len(folders))
             
             op = layout.operator(
                 operator='object.skp_shape_key_parent',
@@ -117,31 +129,28 @@ class OBJECT_MT_skp_shape_key_parent_selected(bpy.types.Menu):
                 icon='CANCEL')
             
             op.type = 'CLEAR_SELECTED'
-            
-            selections = [key.name for key in core.key.get_selected()]
-            folders = [
-                k for k in key_blocks if
-                core.key.is_folder(k)
-            ]
-            
-            if folders:
+               
+            if len(folders)>0:
                 layout.separator()
+
+            # Selected foldes cannot be nested in children of any selected folder
+            forbiddenFolders =[] 
+            for folder in folders:
+                if tree.keyIsSelected(folder.name):
+                    forbiddenFolder+=[folder.name]+folder.getChildrenNames(recursive=True,folderOnly=True) 
             
+            # Render list
             for folder in folders:
                 row = layout.row()
                 
-                parents = memory.tree.active.get_parents(folder.name)
-                selected = folder.name in selections
-                descendant = any(parent for parent in parents if parent in selections)
-                
-                if selected or descendant:
+                if folder.name in forbiddenFolders:
                     row.enabled = False
                 
                 op = row.operator(
                     operator='object.skp_shape_key_parent',
-                    text=("  " * len(parents)) + folder.name,
+                    text=("  " * folder.indent) + folder.name,
                     translate=False,
-                    icon=core.folder.get_active_icon(folder))
+                    icon=core.folder.get_active_icon(folder.shapeKey))
                 
                 op.type = 'PARENT_SELECTED'
                 op.parent = folder.name

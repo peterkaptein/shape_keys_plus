@@ -7,11 +7,12 @@ from . import operators
 from . import menus
 from . import panels
 from . import properties
+from .memory import *
 
 bl_info = {
     "name": "Shape Keys+",
     "author": "Michael Glen Montague",
-    "version": (2, 0, 3),
+    "version": (2, 0, 7),
     "blender": (2, 93, 0),
     "location": "Properties > Object Data > Shape Keys+",
     "description": "Adds a panel with extra options for creating, sorting, viewing, and driving shape keys.",
@@ -146,57 +147,86 @@ class AddonPreferences(bpy.types.AddonPreferences):
             icon=self.shape_key_icon if self.shape_key_icon != 'NONE' else 'BLANK1')
 
 
-class MESH_UL_shape_keys_plus(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index=0, flt_flag=0):
-        obj = active_data
-        shape_keys = obj.data.shape_keys
-        key_blocks = shape_keys.key_blocks
-        
-        tree = memory.tree.active
+class PK_MESH_UL_shape_keys_plus(bpy.types.UIList):
+    # TODO: Use tree structure as main  to render list, insteas of shape key list
+    # How it works now
+    # Shape key items are manipulated to conform to the tree structure
+    # Per shape key, the tree is queried to get info on placement and visibility
+    # Then the ordered shape-key list is rendered based on this
+
+    # SHOW/HIDE:
+    # Items are filtered and shown based on that
+    # If a folder is closed, sub-items are not shown due to that
+
+    # New approach:
+    # 1: Tree is leading and rendered
+    # 2: Shape keys are part of tree-data, or queried via tree / Blender object model
+    # 3: We render the tree, but use Shape keys as data for the rendered tree
+    # 4: No sorting and so on takes place for the shape keys. Why would you?
+
+    def draw_item(self, context, layout, data, shapeKey, icon, sourceObject, active_propname, index=0, flt_flag=0):
+        obj = sourceObject # The object with the parameter that the list is based on
+
+        tree = memory.tree
         
         if not tree:
             # The active tree hasn't been created yet, for some reason.
             # Hopefully it will exist on the next call.
             return
         
-        ancestry = tree.get_ancestry(item.name)
+        # Has it parents?
+ 
+        # selected keys is updated by filter-function
+        multipleKeysSelected=tree.getShapekeysAreSelected()
+        # Is it selectend?
+        # selections = [key.name for key in core.key.get_selected()]
+        thisItemIsSelected = tree.keyIsSelected(shapeKey.name)
+        # Show [o] as selector if parents are selected / in a selected folder
+        parentIsSelected = tree.getAncesterIsSelected(shapeKey.name) # bool([p for p in parentNames if p in selections])
         
-        selections = [key.name for key in core.key.get_selected()]
-        selected = item.name in selections
-        is_folder = core.key.is_folder(item)
-        parents = [p[0] for p in ancestry[1:]]
-        parent_selected = bool([p for p in parents if p in selections])
-        
+        treeNode:TreeNode=tree.getNodeByName(shapeKey.name)
+
         use_edit_mode = obj.use_shape_key_edit_mode and obj.type == 'MESH'
         
         frame = layout.row(align=True)
-        frame.active = not selections or selected
+
+        # Disable if others are selected
+        frame.active = thisItemIsSelected or not multipleKeysSelected
         
+        # Indentation for folders
         # Check if this shape key belongs to a folder.
-        if parents:
+        if treeNode.hasParents():
+            spacing = treeNode.indent * core.settings.shape_key_indent_scale
+
+            # if not treeNode.isFolder:
+            #     spacing+=4
+
             # Get the number of folders this shape key is stacked in.
-            for _ in range(len(ancestry) - 1):
+            for _ in range(spacing - 1):
                 # Use the customizable folder indentation.
-                for _ in range(core.settings.shape_key_indent_scale):
-                    frame.separator(factor=1)
+                frame.separator(factor=1)
         
-        if is_folder:
+        if treeNode.isFolder:
             op = frame.operator(
                 operator='object.skp_folder_toggle',
                 text="",
-                icon=core.folder.get_active_icon(item),
+                icon=core.folder.get_active_icon(shapeKey),
                 emboss=False)
 
             op.index = index
             
             frame.prop(
-                data=item,
+                data=shapeKey,
                 property='name',
                 text="",
                 emboss=False)
         else:
+            frame.label(
+                text="",
+                icon="DOT")
+            
             frame.prop(
-                data=item,
+                data=shapeKey,
                 property='name',
                 text="",
                 emboss=False,
@@ -205,13 +235,13 @@ class MESH_UL_shape_keys_plus(bpy.types.UIList):
         buttons = layout.row(align=True)
         buttons.alignment = 'RIGHT'
         
-        if (item.mute and not selected) or (obj.mode == 'EDIT' and not use_edit_mode):
+        if (shapeKey.mute and not thisItemIsSelected) or (obj.mode == 'EDIT' and not use_edit_mode):
             buttons.active = False
         
-        if selections and not selected:
+        if multipleKeysSelected and not thisItemIsSelected:
             buttons.active = False
         
-        if is_folder:
+        if treeNode.isFolder:
             op = buttons.operator(
                 operator='object.skp_folder_ungroup',
                 text="",
@@ -220,38 +250,38 @@ class MESH_UL_shape_keys_plus(bpy.types.UIList):
 
             op.index = index
         else:
-            if not item.id_data.use_relative:
+            if not shapeKey.id_data.use_relative:
                 buttons.prop(
-                    data=item,
+                    data=shapeKey,
                     property='frame',
                     text="",
                     emboss=False)
             elif index > 0:
                 vrow = buttons.row()
-                vrow.active = not selections or selections and selected
+                vrow.active = not multipleKeysSelected or multipleKeysSelected and thisItemIsSelected
                 vrow.scale_x = 0.66
                 
                 if bpy.app.version < (2, 92):
-                    vrow.prop(data=item, property='value', text="", emboss=False)
+                    vrow.prop(data=shapeKey, property='value', text="", emboss=False)
                 else:
                     if bpy.app.version >= (3, 0):
                         vrow.emboss = 'NONE_OR_STATUS'
                     elif bpy.app.version >= (2, 92):
                         vrow.emboss = 'UI_EMBOSS_NONE_OR_STATUS'
                     
-                    vrow.prop(data=item, property='value', text="")
+                    vrow.prop(data=shapeKey, property='value', text="")
             
             buttons.prop(
-                data=item,
+                data=shapeKey,
                 property='mute',
                 text="",
                 icon='HIDE_OFF',
                 emboss=False)
         
         if index > 0:
-            if selected:
+            if thisItemIsSelected:
                 icon = 'CHECKBOX_HLT'
-            elif parent_selected:
+            elif parentIsSelected:
                 icon = 'SNAP_FACE_CENTER'
             else:
                 icon = 'CHECKBOX_DEHLT'
@@ -270,6 +300,7 @@ class MESH_UL_shape_keys_plus(bpy.types.UIList):
         
         subrow = row.row(align=True)
         
+        subrow.label(text="Find:")
         subrow.prop(
             data=self,
             property='filter_name',
@@ -315,27 +346,38 @@ class MESH_UL_shape_keys_plus(bpy.types.UIList):
                 text="",
                 icon=icon)
     
-    def filter_items(self, context, data, propname):
+    def filter_items(self, context, obj, propname):
+        
+        # Assure we are up to date
+        tree:PkTree = memory.tree.checkStatus()
+    
+        # The list is based on data[propertyname]
+        # The filter then builds an indexed list per item to state "show"/"hide"
+
         flt_flags = []
         flt_name_flags = []
-        flt_neworder = []
-        
-        key_blocks = data.key_blocks
+        flt_neworder=[]
+
+
+        key_blocks = obj.key_blocks
         helper_funcs = bpy.types.UI_UL_list
         filtering_by_name = False
         name_filters = [False] * len(key_blocks)
         
-        memory.changed()
-        
-        tree = memory.tree.active
-        
+
+        # Only if we have the same amount
+        if len(key_blocks)==len(tree.shapeKeyTreeOrder):
+            flt_neworder = tree.shapeKeyTreeOrder # This can be used to present the keys
+        else:
+            print("Items are missing in tree. Shape key tree and shape key list are not the same length")
+
         def filter_set(i, f):
             # self.bitflag_filter_item allows a shape key to be shown.
             # 0 will prevent a shape key from being shown.
             flt_flags[i] = self.bitflag_filter_item if f else 0
         
         def filter_get(i):
-            return flt_flags[i] is not 0
+            return flt_flags[i] != 0
         
         if self.filter_name:
             filtering_by_name = True
@@ -351,55 +393,45 @@ class MESH_UL_shape_keys_plus(bpy.types.UIList):
             # Initialize every shape key as visible.
             flt_flags = [self.bitflag_filter_item] * len(key_blocks)
         
-        for idx, key in enumerate(key_blocks):
-            ancestry = tree.get_ancestry(key.name)
-            location = tree.get_location(key.name)
-            branch = core.utils.get(*location)
-            
-            children = branch[1:] if type(branch) == list and branch.index(key.name) == 0 else []
-            parented = len(ancestry) > 1
-            parents = [p[0] for p in ancestry[1:][::-1]]
+        for idx, shapeKey in enumerate(key_blocks):     
             
             hidden = False
+            node=tree.getNodeByName(shapeKey.name)
+            nodeHasParents=node.hasParents()
             
-            if parented:
-                parent_collapsed = False
-                
-                for p in parents:
-                    if not core.folder.get_block_value(key_blocks[p], 'expand'):
-                        parent_collapsed = True
-                        break
-                
-                if parent_collapsed and not filtering_by_name:
+            if nodeHasParents:
+                if node.parentIsCollapsed() and not filtering_by_name:
                     hidden = True
             
             if hidden:
-                filter_set(idx, False)
+                filter_set(idx, False) # Hide item
             
-            if filtering_by_name and parented:
+            if filtering_by_name and nodeHasParents:
+                parents=node.getAncestryNames()
                 for p in parents:
                     parent_index = key_blocks.find(p)
                     parent_hidden = not name_filters[parent_index]
                     
                     if name_filters[idx] and parent_hidden:
-                        filter_set(parent_index, True)
+                        filter_set(parent_index, True) # Show item
             
             if core.settings.show_filtered_folder_contents:
-                if children and filter_get(idx):
-                    for i in range(len(children)):
+
+                if node.hasChildren() and filter_get(idx):
+                    for i in range(len(node.children)):
                         filter_set(idx + 1 + i, True)
             
             if core.settings.shape_key_limit_to_active:
-                if children:
+                if node.hasChildren():
                     filter_set(idx, False)
                 else:
                     val = core.settings.filter_active_threshold
                     below = core.settings.filter_active_below
                     
                     in_active_range = \
-                        key.value <= val if \
+                        shapeKey.value <= val if \
                         below else \
-                        key.value >= val
+                        shapeKey.value >= val
                     
                     filter_set(idx, in_active_range)
         
@@ -451,34 +483,43 @@ classes = (
     properties.KeyProperties,
     properties.SceneProperties,
     
-    MESH_UL_shape_keys_plus
+    PK_MESH_UL_shape_keys_plus,
 )
 
 
 def register():
     for cls in classes:
+        print("register xlass")
         bpy.utils.register_class(cls)
-    
-    bpy.types.Scene.shape_keys_plus = bpy.props.PointerProperty(
+
+
+    from bpy.props import (
+                       PointerProperty,
+                       )
+
+    bpy.types.Scene.shape_keys_plus = PointerProperty(
         type=properties.SceneProperties, name=core.strings['Shape Keys+'])
-    bpy.types.Key.shape_keys_plus = bpy.props.PointerProperty(
+    bpy.types.Key.shape_keys_plus = PointerProperty(
         type=properties.KeyProperties, name=core.strings['Shape Keys+'])
     
     core.preferences = bpy.context.preferences.addons[__name__].preferences
-    
+    print("preferences")
     default_panel_exists = hasattr(bpy.types, 'DATA_PT_shape_keys')
     
     if core.preferences.hide_default and default_panel_exists:
-        bpy.utils.unregister_class(bl_ui.properties_data_mesh.DATA_PT_shape_keys)
+        try:
+            bpy.utils.unregister_class(bl_ui.properties_data_mesh.DATA_PT_shape_keys)
+        except RuntimeError:
+            pass
     
     # Blender 2.79b, SKP v1.0.x
-    if hasattr(bpy.types, 'OBJECT_PT_skp_shape_keys_plus'):
-        bpy.utils.unregister_class(bpy.types.OBJECT_PT_skp_shape_keys_plus)
+    #if hasattr(bpy.types, 'OBJECT_PT_skp_shape_keys_plus'):
+    #bpy.utils.unregister_class(bpy.types.OBJECT_PT_skp_shape_keys_plus)
     
     # Blender 2.79b, SKP v1.1.x
-    if hasattr(bpy.types, 'OBJECT_PT_shape_keys_plus'):
-        bpy.utils.unregister_class(bpy.types.OBJECT_PT_shape_keys_plus)
-
+    #if hasattr(bpy.types, 'OBJECT_PT_shape_keys_plus'):
+    #bpy.utils.unregister_class(bpy.types.OBJECT_PT_shape_keys_plus)
+    print("done registering class")
 
 def unregister():
     for cls in classes[::-1]:

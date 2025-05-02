@@ -21,11 +21,19 @@ class OBJECT_OT_skp_folder_toggle(bpy.types.Operator):
         shape_keys = obj.data.shape_keys
         key_blocks = shape_keys.key_blocks
         active_key = obj.active_shape_key
+
+        key=key_blocks[self.index] 
+
+        tree=memory.tree
+
+        activeNode= tree.getNodeByName(active_key.name)
+        parentNames=activeNode.getAncestryNames()
         
-        if active_key and key_blocks[self.index].name in memory.tree.active.get_parents(active_key.name):
+        if active_key and key.name in parentNames:
             # The active index shouldn't be on a hidden shape key.
             obj.active_shape_key_index = self.index
         
-        core.folder.toggle(key_blocks[self.index])
+        core.folder.toggle(key)
+        memory.tree.update()
         
         return {'FINISHED'}

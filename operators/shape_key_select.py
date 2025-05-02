@@ -1,6 +1,7 @@
 import bpy
 
 from .. import core
+from .. import memory
 
 
 class OBJECT_OT_skp_shape_key_select(bpy.types.Operator):
@@ -42,4 +43,5 @@ class OBJECT_OT_skp_shape_key_select(bpy.types.Operator):
             for index, key in enumerate(key_blocks):
                 core.key.select(index, str(index) not in selections)
         
+        memory.tree.update()
         return {'FINISHED'}

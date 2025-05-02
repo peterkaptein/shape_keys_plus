@@ -1,0 +1,27 @@
+schema_version = "1.0.0"
+
+id = "pk_shapekey_plusplus"
+version = "4.4.3"
+name = "Shape Keys++"
+tagline = "Tools to work with shape keys"
+maintainer = "Peter Kaptein"
+type = "add-on"
+website = "https://bitbucket.org/Diffeomorphic/import_daz/wiki/Home/"
+tags = ["Object", "Shape Keys"]
+blender_version_min = "4.2.0"
+license = [
+  "SPDX:GPL-2.0-or-later",
+]
+copyright = [
+  "2016-2025 Thomas Larsson",
+]
+
+
+[build]
+paths_exclude_pattern = [
+  "__pycache__/",
+   ".git*",
+  "/.git/",
+  "runtime/__pycache__/",
+  "runtime/.git/"
+]

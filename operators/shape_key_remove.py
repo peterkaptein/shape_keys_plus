@@ -2,7 +2,7 @@ import bpy
 
 from .. import core
 from .. import memory
-
+from ..memory import TreeNode, PkTree
 
 class OBJECT_OT_skp_shape_key_remove(bpy.types.Operator):
     bl_idname = 'object.skp_shape_key_remove'
@@ -24,7 +24,7 @@ class OBJECT_OT_skp_shape_key_remove(bpy.types.Operator):
         return context.object.mode != 'EDIT' and context.object.data.shape_keys
     
     def execute(self, context):
-        obj = bpy.context.object
+        obj = bpy.context.active_object
         shape_keys = obj.data.shape_keys
         key_blocks = shape_keys.key_blocks
         anim = shape_keys.animation_data
@@ -32,42 +32,40 @@ class OBJECT_OT_skp_shape_key_remove(bpy.types.Operator):
         if self.type == 'CLEAR':
             bpy.ops.object.shape_key_remove(all=True)
         elif self.type == 'DEFAULT':
-            tree = memory.tree()
-            ancestry = tree.ancestry(obj.active_shape_key.name)
-            location = tree.locate(obj.active_shape_key.name, ancestry[-1])
+            tree = memory.tree
+            treeNode:TreeNode=tree.getNodeByName(obj.active_shape_key.name)
+
+            allChildrenKeys=treeNode.getChildrenShapeKeys(recursive=True)
+            ancestry = tree.getAncestryNames(obj.active_shape_key.name)
             
-            if len(ancestry) > 1:
+            if treeNode.hasParents():
+                # Legacy: number of children is mutated, for reconstruction of folder structure.
                 core.folder.shift_block_value(key_blocks[ancestry[-1][0]], 'children', -1)
             
             active_key = obj.active_shape_key
-            obj.active_shape_key_index += core.folder.get_capacity(active_key)
             
-            for key in reversed([active_key] + core.folder.get_children(active_key)):
+            for key in reversed([active_key] + allChildrenKeys):
+                keyIndex=key_blocks.find(key.name)
+
+                if keyIndex==0:
+                    # skip this shape key
+                    continue
+
                 # Remove the driver first.
                 if anim and anim.drivers:
                     for fc in anim.drivers:
                         if fc.data_path == "key_blocks[\"%s\"].value" % key.name:
                             anim.drivers.remove(fc)
                 
+                # Remove this shape key
+                obj.active_shape_key_index = keyIndex
                 bpy.ops.object.shape_key_remove()
             
-            if obj.data.shape_keys:
-                if obj.active_shape_key.name == key_blocks[0].name and len(key_blocks) > 1:
-                    # Don't let the reference key be automatically highlighted unless it's the only key left.
-                    obj.active_shape_key_index = 1
-                if len(location[0]) > 2:
-                    if location[1] == 1:
-                        # Don't let the parent key be automatically highlighted unless there are no more family members.
-                        if type(location[0][2]) == list:
-                            obj.active_shape_key_index = key_blocks.find(location[0][2][0])
-                        else:
-                            obj.active_shape_key_index = key_blocks.find(location[0][2])
-                    else:
-                        # Ensure that it's the previous sibling that's selected, not just the previous key.
-                        if type(location[0][location[1] - 1]) == list:
-                            obj.active_shape_key_index = key_blocks.find(location[0][location[1] - 1][0])
-                        else:
-                            obj.active_shape_key_index = key_blocks.find(location[0][location[1] - 1])
+            treeNode.remove()
+            
+            # Done removing
+            # TODO: set higlight to item before or removed one, if not a folder
+
         elif self.type == 'DEFAULT_SELECTED':
             selections = core.key.deselect()
             
@@ -87,5 +85,5 @@ class OBJECT_OT_skp_shape_key_remove(bpy.types.Operator):
                                 anim.drivers.remove(fc)
                     
                     bpy.ops.object.shape_key_remove()
-        
+        memory.tree.update()
         return {'FINISHED'}

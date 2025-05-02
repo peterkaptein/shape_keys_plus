@@ -33,7 +33,7 @@ class OBJECT_OT_skp_shape_key_move(bpy.types.Operator):
             return True
         
         if obj.active_shape_key:
-            return len(memory.tree.active.get_family(obj.active_shape_key.name)) > 1
+            return len(memory.tree.getAncestryNames(obj.active_shape_key.name)) > 1
         else:
             return False
     
@@ -45,7 +45,7 @@ class OBJECT_OT_skp_shape_key_move(bpy.types.Operator):
         original_name = obj.active_shape_key.name
         original_index = obj.active_shape_key_index
         
-        tree = memory.tree()
+        tree = memory.tree
         
         if self.selected:
             selections = core.key.deselect()
@@ -54,14 +54,14 @@ class OBJECT_OT_skp_shape_key_move(bpy.types.Operator):
                 selections = selections[::-1]
             
             for name in selections:
-                tree.move(name, self.type)
+                tree.moveNode(name, self.type)
             
-            tree.apply()
+            tree.update()
             
             core.key.reselect(selections)
         else:
-            tree.move(original_name, self.type)
-            tree.apply()
+            tree.moveNode(original_name, self.type)
+            tree.update()
         
         original_index = key_blocks.find(original_name)
         obj.active_shape_key_index = original_index

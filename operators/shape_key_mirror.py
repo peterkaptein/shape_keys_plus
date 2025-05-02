@@ -2,7 +2,7 @@ import bpy
 
 from .. import core
 from .. import memory
-
+from ..memory import PkTree, TreeNode
 
 class OBJECT_OT_skp_shape_key_mirror(bpy.types.Operator):
     bl_idname = 'object.skp_shape_key_mirror'
@@ -24,23 +24,26 @@ class OBJECT_OT_skp_shape_key_mirror(bpy.types.Operator):
         obj = context.object
         key_blocks = obj.data.shape_keys.key_blocks
         original_index = obj.active_shape_key_index
-        
+
+        tree:PkTree = memory.tree
+
         buffer = set()
         
         if self.select:
             for key in core.key.get_selected():
                 if core.key.is_folder(key):
-                    for child in core.folder.get_children(key):
-                        buffer.add(child.name)
+                    for childName in tree.getAncestryNames(key):
+                        buffer.add(childName)
                 else:
                     buffer.add(key.name)
         else:
             if core.key.is_folder(obj.active_shape_key):
-                for child in core.folder.get_children(obj.active_shape_key):
-                    buffer.add(child.name)
+                for childName in tree.getAncestryNames(obj.active_shape_key):
+                    buffer.add(childName)
             else:
                 buffer.add(obj.active_shape_key.name)
         
+        # Mirror the nodes
         for name in buffer:
             key = key_blocks[name]
             obj.active_shape_key_index = key_blocks.find(name)

@@ -29,9 +29,9 @@ blocks = {
 }
 
 icon_pairs_standard = (
-    ('DISCLOSURE_TRI_DOWN', 'DISCLOSURE_TRI_RIGHT', core.strings['icon_pair[Outliner]'], "", 1),
+    ('DOWNARROW_HLT', 'RIGHTARROW', core.strings['icon_pair[Wire]'], "", 1),
+    ('DISCLOSURE_TRI_DOWN', 'DISCLOSURE_TRI_RIGHT', core.strings['icon_pair[Outliner]'], "", 3),
     ('TRIA_DOWN', 'TRIA_RIGHT', core.strings['icon_pair[Bold]'], "", 2),
-    ('DOWNARROW_HLT', 'RIGHTARROW', core.strings['icon_pair[Wire]'], "", 3),
     ('SORT_ASC', 'FORWARD', core.strings['icon_pair[Arrow]'], "", 4),
     ('LAYER_ACTIVE', 'LAYER_USED', core.strings['icon_pair[Small]'], "", 5),
     ('RADIOBUT_ON', 'RADIOBUT_OFF', core.strings['icon_pair[Big]'], "", 6),
