@@ -233,8 +233,6 @@ class PK_MESH_UL_shape_keys_plus(bpy.types.UIList):
         renewSearch=False
         name_filters = [False] * len(key_blocks)
 
-        print("Filtering by name, previous: '",tree.previousSearch,"' now: '",self.filter_name,"'")
-
         if self.filter_name:
             filtering_by_name = True
 
