@@ -1,13 +1,24 @@
 # Shape Keys+
+Original written by Michael Glen Montague.
+[Find the original here](https://github.com/MichaelGlenMontague/shape_keys_plus)
 
+This branch is made in respect to the original work, as I do not commit changes to an existing repository without prior consent by the maker.
+
+Shapekeys+ is one of the better (if not the best) solutions to organize shapekeys in your Blender project.
+
+I created this fork to fix some issues with performance, and due to folders randomly getting lost in other folders.
+
+This version builds a viewmodel of the shapekeys, and uses that to render the list.
+I hope the improvements will be included in whatever form in the orignal product.
+
+Shapekeys+ is:
 A free [Blender](https://www.blender.org/) add-on that grants ***Shape Keys+,*** a plus-size panel containing extra features for creating, sorting, viewing, and driving shape keys.
 
 Automatically hides the default ***Shape Keys*** panel, which can be enabled again via the add-on's preferences. ***Shape Keys+*** was made to help with managing hundreds of shape keys on a fully rigged character. It focuses on saving time and decreasing the number of clicks needed for common operations such as moving or copying shape keys.
 
 Click-holding or click-dragging on one of the **Add** / **Copy** / **Remove** sidebar buttons will open its respective specials menu, containing extra operations related to the respective button.
 
-![0|369x821](./screenshot.png)
-> Screenshot taken in Blender 2.83.
+
 
 # Features
 

@@ -449,6 +449,11 @@ class StoredTreeParser:
 
 class PkTree:
 
+    buffered_flt_flags=[]
+    buffered_name_filters=[]
+    previousSearch=""
+    previousItenCount=0
+
     parser=StoredTreeParser()
 
     dictionary={}

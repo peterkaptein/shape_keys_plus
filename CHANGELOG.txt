@@ -1,4 +1,57 @@
-v2.0.3
+PK v0.0.1
+    - ISSUES
+        - Tree structure would change / folders would be un-requestedly moved into other folders due to bug
+        - Blender would hang for minutes when folders were moved when shape key count becomes big (> 600)
+    
+    - FOUND- AND PROBABLE CAUSES
+        - Tree structure was not explicitly stored per object (parent child-relaionships)
+        - Tree structure was based on order of shapekeys in list, 
+          and the number of children registered per "folder" shape key
+
+        Performance:
+        - As it is apparently not possible to directly move Shapekeys to explicit positions
+          Changing sort-order (and positions of folders in the list) was done 
+          by changing item-order in Shape Keys-list in a loop, one shapekey and one step at the time
+        
+        - PROBABLE ISSUE: Moving shapekeys in the list at all has been documented 
+          in Reddit-treads as costly / labor-intensive for Blender. 
+
+    - REWORK/REFACTOR
+        Securing tree-structure:
+        - Store tree structure explicitly in Mesh-object
+
+        Performance / Blender not hanging with large lists:
+        - No manipulation of the list of shape-keys: leave that as is
+        - Create / build a "View model" of the tree-structure using TreeNode objects, 
+          that contains the ShapeKeys
+        - Create a flatlist of the tree-structure to represent the flatlist 
+          that is to be rendered
+        - Create an array of shape-key indexes in order of where these 
+          shapekeys appear in the flatlist
+        - Use UIList - filter_items and flt_neworder / sortorder 
+          to display items in the proper order
+
+    - CONCEPTS USED:
+        - Create the tree structure in an explicit object-model, 
+          using TreeNodes with parent-references and children
+        - Use TreeNodes for queries like:
+             "do you have children?" "Do you have parents?"
+        - Use TreeNodes to derive flatlist from Treestructure
+        - Use the direct reference to ShapeKeys, to derive info 
+          on those shapekeys where the original code needs this
+        - Use flatlist to create a sort-list for Blender UIList, 
+          to render ShapeKeys in proper order
+        - Use a dictionary for fast queries / fast access 
+          to the named items in the list
+        - Store the tree-structure in the same way as it was parsed 
+          from the ShapeKeys:
+            [shapekeyName, shapekeyName,[FolderName,ChildShapekeyName,[ChildFoldername, shapekeyname]]]
+        - Update the flatlist with every change
+        - Check and create a new NodeTree if another object is selected
+
+Original by Michael Glen Montague
+https://github.com/MichaelGlenMontague/shape_keys_plus
+v2.0.3 - Sept 16 2024
     - PATCH
         • Allowed add-on to be installed directly from a git clone.
 
