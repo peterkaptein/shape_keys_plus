@@ -33,6 +33,8 @@ class DATA_PT_shape_keys_plus(bpy.types.Panel):
         selections = core.key.get_selected()
         
         is_active_folder = active_key and core.key.is_folder(active_key)
+
+        
         
         enable_edit = obj.mode != 'EDIT'
         enable_edit_value = False
@@ -234,6 +236,11 @@ class DATA_PT_shape_keys_plus(bpy.types.Panel):
         ######## OTHER ########
         #######################
         
+        if not active_key:
+            return
+        
+        activeNode=memory.tree.getNodeByName(active_key.name)
+
         col.separator()
         
         row = col.row()
@@ -252,7 +259,7 @@ class DATA_PT_shape_keys_plus(bpy.types.Panel):
         
         sub = col.column(align=True)
         row = sub.row(align=True)
-        # row.enabled = bool(selections) or loc[1] > bool(memory.tree.get_parents(active_key.name))
+        row.enabled = bool(selections) or (not activeNode.isFirst)
         op = row.operator(
             operator='object.skp_shape_key_move',
             icon='TRIA_UP_BAR',
@@ -268,6 +275,7 @@ class DATA_PT_shape_keys_plus(bpy.types.Panel):
         
         op.type = 'UP'
         op.selected = bool(selections)
+        row.enabled = bool(selections) or (not activeNode.isLast)
         
         op = sub.operator(
             operator='object.skp_shape_key_move',
@@ -278,7 +286,7 @@ class DATA_PT_shape_keys_plus(bpy.types.Panel):
         op.selected = bool(selections)
         
         row = sub.row(align=True)
-        row.enabled = bool(selections) #or loc[1] < len(loc[0]) - 1
+        row.enabled = bool(selections) or (not activeNode.isLast)
         op = row.operator(
             operator='object.skp_shape_key_move',
             icon='TRIA_DOWN_BAR',

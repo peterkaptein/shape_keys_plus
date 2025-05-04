@@ -38,9 +38,9 @@ class OBJECT_OT_skp_shape_key_remove(bpy.types.Operator):
             allChildrenKeys=treeNode.getChildrenShapeKeys(recursive=True)
             ancestry = tree.getAncestryNames(obj.active_shape_key.name)
             
-            if treeNode.hasParents():
-                # Legacy: number of children is mutated, for reconstruction of folder structure.
-                core.folder.shift_block_value(key_blocks[ancestry[-1][0]], 'children', -1)
+            #if treeNode.hasParents():
+            # Legacy: number of children is mutated, for reconstruction of folder structure.
+            #   core.folder.shift_block_value(key_blocks[ancestry[-1][0]], 'children', -1)
             
             active_key = obj.active_shape_key
             

@@ -32,17 +32,26 @@ class BaseTreeNode:
     isFolder=False
     shapeKey:ShapeKeyInterface=None
     vertex_group:str="" # The identifier of the key
-    name:str=""
+    _name:str=""
 
     children:list=[]
     parent=None
+
+    isFirst:bool=False
+    isLast:bool=False
 
     @property
     def name(self)->str:
         # Always present the correct name
         if self.shapeKey:
-            return self.shapeKey.name
-        
+            try:
+                self._name=self.shapeKey.name
+                return self.shapeKey.name
+            except Exception as e:
+                # Handle any exception
+                print(f"An error occurred: {e}, restoring name to stored name")
+                self.shapeKey.name=self._name
+            
         # No shapekey, use given name
         return self._name
     
@@ -246,7 +255,14 @@ class TreeNode(TreeNodeWithParent):
 
         if self.hasChildren() and (self.isOpen() or recursive):
             children:list[TreeNode] = self.children
+            lastIndex=len(children)-1
+            index=0
             for child in children:
+                
+                index+=1
+                child.isFirst=index==1
+                child.isLast=index==lastIndex
+
                 if child.name not in visited:
                     visited.append(child.name)
                     flatList += child.getAsFlatList(visited,level+1,recursive)

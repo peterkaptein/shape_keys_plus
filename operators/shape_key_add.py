@@ -42,7 +42,7 @@ class OBJECT_OT_skp_shape_key_add(bpy.types.Operator):
             
             
             if core.settings.shape_key_auto_parent:
-                if activeNode.isFolder():
+                if activeNode.isFolder:
                     activeNode.addShapeKeyAsChild(newShapeKey)
                     # tree.move(newShapeKey.name, core.settings.shape_key_parent_placement)
                 else:
