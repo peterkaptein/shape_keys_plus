@@ -224,22 +224,23 @@ class PK_MESH_UL_shape_keys_plus(bpy.types.UIList):
         else:
             print("Items are missing in tree. Shape key tree and shape key list are not the same length")
 
-        def filter_set(i, f):
+        def filter_set(i, isVisible):
             # self.bitflag_filter_item allows a shape key to be shown.
             # 0 will prevent a shape key from being shown.
-            flt_flags[i] = self.bitflag_filter_item if f else 0
+            
+            flt_flags[i] = self.bitflag_filter_item if isVisible else 0
         
         def filter_get(i):
+            
             return flt_flags[i] != 0
+            
         
 
         renewSearch=False
         name_filters = [False] * len(key_blocks)
 
-        if self.filter_name:
+        if self.filter_name and False:
             filtering_by_name = True
-
-            
 
             if tree.previousSearch!=self.filter_name or tree.previousItenCount!=len(key_blocks):
                 tree.buffered_flt_flags=[]
@@ -259,28 +260,29 @@ class PK_MESH_UL_shape_keys_plus(bpy.types.UIList):
                 flt_flags=tree.buffered_flt_flags
                 name_filters=tree.buffered_name_filters
 
+                if len(flt_flags)<len(key_blocks):
+                    flt_flags = [self.bitflag_filter_item] * len(key_blocks)
+
             for i in range(len(flt_flags)):
                 if flt_flags[i] == self.bitflag_filter_item:
                     name_filters[i] = True
         else:
             # Initialize every shape key as visible.
             flt_flags = [self.bitflag_filter_item] * len(key_blocks)
-        
+
+
+        filtering_by_name=False
         for idx, shapeKey in enumerate(key_blocks):     
             
-            hidden = False
             node=tree.getNodeByName(shapeKey.name)
             nodeHasParents=node.hasParents()
             
             if nodeHasParents:
-                if node.parentIsCollapsed() and not filtering_by_name:
-                    hidden = True
-            
-            if hidden:
-                filter_set(idx, False) # Hide item
+                if node.parentIsClosed() and not filtering_by_name:
+                    filter_set(idx, isVisible=False) # Hide item
             
             if filtering_by_name and nodeHasParents and renewSearch:
-                # This is expensive each draw cycle, so we skip and rely on buffer
+                # This is expensive each draw cycle, so we skip if we can and rely on buffer
                 parents=node.getAncestryNames()
                 for p in parents:
                     parent_index = key_blocks.find(p)
@@ -289,15 +291,15 @@ class PK_MESH_UL_shape_keys_plus(bpy.types.UIList):
                     if name_filters[idx] and parent_hidden:
                         filter_set(parent_index, True) # Show item
             
-            if core.settings.show_filtered_folder_contents:
+            # if core.settings.show_filtered_folder_contents:
 
-                if node.hasChildren() and filter_get(idx):
-                    for i in range(len(node.children)):
-                        filter_set(idx + 1 + i, True)
+            #     # if node.hasChildren() and node.isOpen():
+            #     #     # for i in range(len(node.children)):
+            #     #     # filter_set(idx + 1 + i, True)
             
             if core.settings.shape_key_limit_to_active:
                 if node.hasChildren():
-                    filter_set(idx, False)
+                    filter_set(idx, isVisible=False)
                 else:
                     val = core.settings.filter_active_threshold
                     below = core.settings.filter_active_below

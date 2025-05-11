@@ -50,7 +50,10 @@ class BaseTreeNode:
             except Exception as e:
                 # Handle any exception
                 print(f"An error occurred: {e}, restoring name to stored name")
-                self.shapeKey.name=self._name
+                try:
+                    self.shapeKey.name=self._name
+                except Exception as e:
+                    print(f"An error occurred: {e}, unableto restore name to stored name")
             
         # No shapekey, use given name
         return self._name
@@ -140,13 +143,13 @@ class TreeNodeWithParent(TreeNodeWithChildren):
         # No grandparent
         return False
 
-    def parentIsCollapsed(self):
+    def parentIsClosed(self):
 
         if self.parent:
             parent:TreeNodeWithParent = self.parent
             # Check if parent is collapsed
-            isClosed = parent.isOpen() == False
-            return isClosed or parent.parentIsCollapsed()
+            isClosed = not parent.isOpen()
+            return isClosed or parent.parentIsClosed()
         
         return False
     
@@ -173,11 +176,30 @@ class TreeNodeWithParent(TreeNodeWithChildren):
 
         self.parent.putFoldersOnTop()
 
-    def remove(self):
+    def remove(self)->ShapeKeyInterface:
+        
+        nextNode=None
+
         # Remove node from parent
         if self.parent and self in self.parent.children:
+
             parentChildren:list[TreeNode] = self.parent.children
+
+            myIndex=parentChildren.index(self)
+
             parentChildren.remove(self)
+
+            if myIndex<len(parentChildren)-1:
+                myIndex=0
+
+            
+            if len(parentChildren)==0:
+                nextNode=parentChildren[myIndex]
+            else:
+                nextNode=self.parent.shapeKey
+
+            
+                
 
         # Also remove all children from the node
         if len(self.children)>0:
@@ -191,6 +213,7 @@ class TreeNodeWithParent(TreeNodeWithChildren):
         self.children=None
         self.parent=None
     
+        return nextNode
 
     # Shape key actions
     def addShapeKeyAsChild(self, shapeKey):
@@ -292,7 +315,7 @@ class TreeNode(TreeNodeWithParent):
         # Oldest ancestors first
         parent:TreeNode=self.parent
 
-        if parent:
+        if parent and parent.hasParents():
             return  self.parent.getAncestryNames() + [self.parent.name] if self.parent else []
         
         # No parent, no ancestors
@@ -620,7 +643,7 @@ class PkTree:
 
     def getFlatlist(self,folderOnly=False):
         if folderOnly:
-            return [item for item in self.flatList if item.hasChildren()]
+            return [item for item in self.flatList if item.isFolder]
         
         return self.flatList
     
@@ -638,6 +661,9 @@ class PkTree:
         return node.getAncestryNames()
 
     def getNodeByName(self,nodeName)->TreeNode|None:
+
+        if nodeName==self.rootNode.name:
+            return self.rootNode
         
         if nodeName not in self.dictionary:
             # Something changed the name of a property
@@ -647,6 +673,7 @@ class PkTree:
             # 2: We do a sanity check, just in case something else happened
             self.updateAndSanitizeFlatTree()
         
+
         result = self.dictionary[nodeName]
 
         if not result:

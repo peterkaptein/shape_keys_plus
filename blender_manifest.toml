@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "pk_shapekey_plusplus"
-version = "4.4.3"
+version = "4.4.457"
 name = "Shape Keys++"
 tagline = "Tools to work with shape keys"
 maintainer = "Michael Glen Montague, Peter Kaptein"

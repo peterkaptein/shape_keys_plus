@@ -10,45 +10,35 @@ from . import properties
 from .memory import *
 from .views.shape_keys_ui_list import PK_MESH_UL_shape_keys_plus
 
-bl_info = {
-    "name": "Shape Keys++",
-    "author": "Michael Glen Montague, Peter Kaptein",
-    "version": (2, 0, 7),
-    "blender": (2, 93, 0),
-    "location": "Properties > Object Data > Shape Keys+",
-    "description": "Adds a panel with extra options for creating, sorting, viewing, and driving shape keys.",
-    "warning": "",
-    "doc_url": "https://github.com/MichaelGlenMontague/shape_keys_plus/wiki",
-    "tracker_url": "https://github.com/MichaelGlenMontague/shape_keys_plus/issues",
-    "category": "Object"
-}
+# bl_info = {
+#     "name": "Shape Keys++",
+#     "author": "Michael Glen Montague, Peter Kaptein",
+#     "version": (2, 0, 8),
+#     "blender": (2, 93, 0),
+#     "location": "Properties > Object Data > Shape Keys++",
+#     "description": "Adds a panel with extra options for creating, sorting, viewing, and driving shape keys.",
+#     "warning": "",
+#     "doc_url": "https://github.com/MichaelGlenMontague/shape_keys_plus/wiki",
+#     "tracker_url": "https://github.com/MichaelGlenMontague/shape_keys_plus/issues",
+#     "category": "Object"
+# }
 
 # bl_info is parsed before the add-on is loaded, so its translations have to be copied by hand or a script.
 
-bl_info_en_US = {
-    "name": "Shape Keys+",
-    "author": "Michael Glen Montague",
-    "version": (2, 0, 3),
-    "blender": (2, 93, 0),
-    "location": "Properties > Object Data > Shape Keys+",
-    "description": "Adds a panel with extra options for creating, sorting, viewing, and driving shape keys.",
-    "warning": "",
-    "doc_url": "https://github.com/MichaelGlenMontague/shape_keys_plus/wiki",
-    "tracker_url": "https://github.com/MichaelGlenMontague/shape_keys_plus/issues",
-    "category": "Object"
-}
-bl_info_ja_JP = {
-    "name": "シェイプキープラス (Shape Keys+)",
-    "author": "Michael Glen Montague （マイケルグレンモンタギュー）",
-    "version": (2, 0, 3),
-    "blender": (2, 93, 0),
-    "location": "プロパティ ⇒ オブジェクトデータ ⇒ シェイプキープラス",
-    "description": "シェイプキーを作成したり整理したり見せたりドライブしたりのための余分設定を入っているパネルを追加します。",
-    "warning": "",
-    "doc_url": "https://github.com/MichaelGlenMontague/shape_keys_plus/wiki",
-    "tracker_url": "https://github.com/MichaelGlenMontague/shape_keys_plus/issues",
-    "category": "Object"
-}
+# bl_info_en_US = {
+#     "name": "Shape Keys++",
+#     "author": "Michael Glen Montague",
+#     "version": (2, 0, 8),
+#     "blender": (2, 93, 0),
+#     "location": "Properties > Object Data > Shape Keys+",
+#     "description": "Adds a panel with extra options for creating, sorting, viewing, and driving shape keys.",
+#     "warning": "",
+#     "doc_url": "https://github.com/MichaelGlenMontague/shape_keys_plus/wiki",
+#     "tracker_url": "https://github.com/MichaelGlenMontague/shape_keys_plus/issues",
+#     "category": "Object"
+# }
+
+# bl_info_en_US=bl_info
 
 
 class AddonPreferences(bpy.types.AddonPreferences):

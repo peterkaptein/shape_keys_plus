@@ -20,12 +20,12 @@ class OBJECT_MT_skp_shape_key_parent(bpy.types.Menu):
         
         if active_key:
 
-            treeNode=tree.getNodeByName(active_key.name)
-            parents = treeNode.getAncestryNames()
+            activeTreeNode=tree.getNodeByName(active_key.name)
+            parents = activeTreeNode.getAncestryNames()
             folders=tree.getFlatlist(folderOnly=True)
-            forbiddenFolders = [active_key.name]+treeNode.getChildrenNames(folderOnly=True,recursive=True)
-            if treeNode.hasParents():
-                parentName=treeNode.parent.name
+            forbiddenFolders = [active_key.name]+activeTreeNode.getChildrenNames(folderOnly=True,recursive=True)
+            if activeTreeNode.hasParents():
+                parentName=activeTreeNode.parent.name
                 forbiddenFolders+=[parentName]
 
                 # New folder
@@ -53,8 +53,8 @@ class OBJECT_MT_skp_shape_key_parent(bpy.types.Menu):
                 op.child = active_key.name
                 op.parent = parentName
             
-            if treeNode.hasGrandParents():
-                parentName=treeNode.parent.name
+            if activeTreeNode.hasGrandParents():
+                parentName=activeTreeNode.parent.name
                 op = layout.operator(
                     operator='object.skp_shape_key_parent',
                     text=core.strings['menus.ShapeKeyParent.draw.operator[Unparent from "%s"]'] % parents[-1],

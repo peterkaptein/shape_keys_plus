@@ -61,7 +61,10 @@ class OBJECT_OT_skp_shape_key_remove(bpy.types.Operator):
                 obj.active_shape_key_index = keyIndex
                 bpy.ops.object.shape_key_remove()
             
-            treeNode.remove()
+            nextShapeKey = treeNode.remove()
+
+            if nextShapeKey:
+                obj.active_shape_key_index=shape_keys.index(nextShapeKey)
             
             # Done removing
             # TODO: set higlight to item before or removed one, if not a folder

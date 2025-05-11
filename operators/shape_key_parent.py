@@ -45,7 +45,7 @@ class OBJECT_OT_skp_shape_key_parent(bpy.types.Operator):
         parentNode=tree.getNodeByName(self.parent) if self.parent else None
         childNode=tree.getNodeByName(self.child) if self.child else None
         
-        if self.type == 'PARENT':
+        if self.type == 'PARENT' and parentNode:
             placement = core.settings.shape_key_parent_placement
             
             parentNode.addChild(childNode)
@@ -59,7 +59,7 @@ class OBJECT_OT_skp_shape_key_parent(bpy.types.Operator):
             # Move to the root of the tree
             placement = core.settings.shape_key_unparent_placement
             
-            if parentNode.hasParents():
+            if parentNode and parentNode.hasParents():
                 tree.rootNode.addChild(childNode)
                 tree.update()
                 
@@ -196,7 +196,7 @@ class OBJECT_OT_skp_shape_key_parent(bpy.types.Operator):
                 selectedNode=tree.getNodeByName(name)
                 newFolder.addChild(selectedNode)
             
-            tree.apply()
+            tree.update()
             
             # Highlight Parent Folder
             obj.active_shape_key_index = key_blocks.find(parentShapeKey.name)
