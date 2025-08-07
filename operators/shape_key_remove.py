@@ -63,7 +63,7 @@ class OBJECT_OT_skp_shape_key_remove(bpy.types.Operator):
             
             nextShapeKey = treeNode.remove()
 
-            if nextShapeKey:
+            if nextShapeKey and False:
                 obj.active_shape_key_index=shape_keys.index(nextShapeKey)
             
             # Done removing
@@ -88,5 +88,5 @@ class OBJECT_OT_skp_shape_key_remove(bpy.types.Operator):
                                 anim.drivers.remove(fc)
                     
                     bpy.ops.object.shape_key_remove()
-        memory.tree.update()
+        memory.tree.update(clearSelections=True)
         return {'FINISHED'}

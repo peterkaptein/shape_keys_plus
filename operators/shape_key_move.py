@@ -56,7 +56,7 @@ class OBJECT_OT_skp_shape_key_move(bpy.types.Operator):
             for name in selections:
                 tree.moveNode(name, self.type)
             
-            tree.update()
+            tree.update(clearSelections=True)
             
             core.key.reselect(selections)
         else:

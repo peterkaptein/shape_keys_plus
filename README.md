@@ -2,7 +2,7 @@
 Original written by Michael Glen Montague.
 [Find the original here](https://github.com/MichaelGlenMontague/shape_keys_plus)
 
-This branch is made in respect to the original work, as I do not commit changes to an existing repository without prior consent by the maker.
+This branch is NOT PRODUCTION READY / is a working proof of concept and made in respect to the original work, as I do not commit changes to an existing repository without prior consent by the maker.
 
 Shapekeys+ is one of the better (if not the best) solutions to organize shapekeys in your Blender project.
 

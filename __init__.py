@@ -157,6 +157,9 @@ classes = (
     operators.VariableCopy,
     operators.VariableMove,
     operators.VariableRemove,
+    operators.SaveFolderStru,
+    operators.RestoreFolderStru,
+    operators.FixFolderStrue,
     
     menus.ShapeKeyParent,
     menus.ShapeKeyParentSelected,

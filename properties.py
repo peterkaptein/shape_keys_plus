@@ -145,7 +145,7 @@ class SceneProperties(bpy.types.PropertyGroup):
         description=core.strings['properties.SceneProperties.shape_key_indent_scale.description'],
         min=0,
         max=6,
-        default=3)
+        default=1)
     
     show_filtered_folder_contents: bpy.props.BoolProperty(
         name=core.strings['properties.SceneProperties.show_filtered_folder_contents.name'],

@@ -142,14 +142,33 @@ class DATA_PT_shape_keys_plus(bpy.types.Panel):
             icon='ARROW_LEFTRIGHT')
         
         op.mode = 'INVERSE'
+
+
+        if memory.tree.hasIssues()==False:
         
-        row = layout.row()
-        
+            row = layout.row()
+            col = row.column(align=True)
+            op = col.operator(
+                operator='wm.sk_savestru',
+                icon='FILE_TICK')
+
+            col = row.column(align=True)
+            op = col.operator(
+                operator='wm.sk_restorestru',
+                icon='EXPORT')  
+
+        #if memory.tree.hasIssues(): 
+            col = row.column(align=True)
+            op = col.operator(
+                operator='wm.sk_fixstru',
+                icon='EXPORT') 
+
         ######################
         ######## LIST ########
         ######################
         # def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
         # TODO: make shape_keys contain sorted keys from our tree
+        row = layout.row()
 
         if memory.tree:
 

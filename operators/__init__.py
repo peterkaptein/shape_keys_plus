@@ -15,3 +15,7 @@ from .variable_add import DRIVER_OT_skp_variable_add as VariableAdd
 from .variable_copy import DRIVER_OT_skp_variable_copy as VariableCopy
 from .variable_move import DRIVER_OT_skp_variable_move as VariableMove
 from .variable_remove import DRIVER_OT_skp_variable_remove as VariableRemove
+from .saverestorefolserstructure import SaveFolderStrue as SaveFolderStru
+from .saverestorefolserstructure import RestoreFolderStrue as RestoreFolderStru
+from .saverestorefolserstructure import FixFolderStrue as FixFolderStrue
+

@@ -56,6 +56,7 @@ class OBJECT_OT_skp_shape_key_copy(bpy.types.Operator):
                     # elif placement == 'BELOW':
                     #     tree.move(copyName, 'DOWN')
                     sourceNode:TreeNode=tree.getNodeByName(shapeKey.name)
+
                     newShapeKey = core.key.copy(shapeKey, self.mirror, self.custom)  
                     sourceNode.addShapeKeyAsSibling(newShapeKey)
                     
@@ -66,7 +67,7 @@ class OBJECT_OT_skp_shape_key_copy(bpy.types.Operator):
                         if shapeKey != key_blocks[selectedKeyIndex]:
                             skip.append(index)
             
-            tree.update()
+            tree.update(clearSelections=True)
             
             for newKey in createdCopiesToSelect:
                 core.key.select(newKey.name, True)
@@ -90,7 +91,7 @@ class OBJECT_OT_skp_shape_key_copy(bpy.types.Operator):
                 sourceNode.addShapeKeyAsSibling(copy)
             
             # Update flatlist, etcetera
-            tree.update()
+            tree.update(clearSelections=True)
             
             obj.active_shape_key_index = key_blocks.find(active_copy)
         
